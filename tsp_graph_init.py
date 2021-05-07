@@ -21,22 +21,35 @@ class Lieu ():
 
 
 class Route ():
-    def __init__(self, ordre):
+    def __init__(self, ordre, matrice):
         """Instanciation d'une route, ordre est une liste de points (objets Lieu)"""
-        self.ordre = ordre        
-    
-    def calcul_distance_route(self):
-        """Calcul de la distance totale entre les points d'une route"""
-        distances = [] # distances entre les points deux à deux
-        distance_route = 0 # distance totale
-        # On itère sur un zip de la liste ordre et de sa soeur décalée de 1 élément.
-        # zip() crée liste de tuples avec les points deux à deux [(point1,point2), ...] 
-        for point1, point2 in zip(self.ordre, self.ordre[1:]):
-            # ajout des distances entre les points deux à deux
-            distances.append(point1.calcul_distance(point2))
-        distance_route = sum(distances) # somme de toutes les distances pour avoir le total
-        return distance_route
+        self.ordre = ordre
+        self.distance = 0
+        self.verification_formatage(ordre)
+        self.calcul_distance_route(matrice)
 
+    def __repr__(self):
+        return self.__dict__
+
+    def verification_formatage(self,ordre):
+        """Vérification du bon formatage de la liste ordre passée au init de Route"""
+        if ordre[0] != 0:
+            raise ValueError ("Le lieu d'index zéro doit être présent en première et en dernière position dans l'ordre.")
+        elif ordre[-1] != 0:
+            raise ValueError ("Le lieu d'index zéro doit être présent en première et en dernière position dans l'ordre.")
+        else :
+            set_ordre = set(ordre[1:-1]) # On compare la liste débarassée des zéro à son équivalent en set
+            if len(set_ordre) != len(ordre[1:-1]): # Si le set est plus petit, ça veut dire qu'il y a des doublons dans la liste
+                raise ValueError ("La liste ordre ne doit pas présenter d'indices en double à part le départ et l'arrivée à 0.")
+        
+    def calcul_distance_route(self, matrice):
+        """Chercher les distances dans la matrice origine-destination"""
+        distances = [] # toutes nos distances pour la route
+        distance_route = 0 # la distance totale pour la route
+        for point1, point2 in zip(self.ordre, self.ordre[1:]):
+            distances.append(matrice.loc[point1,point2])
+        distance_route = sum(distances)
+        self.distance = distance_route
 
 class Graph ():
 
@@ -85,9 +98,6 @@ class Graph ():
 
 
 
-
-
-
 class Affichage(tk.Tk):
 
     """Instanciation de la classe d'affichage"""
@@ -95,6 +105,7 @@ class Affichage(tk.Tk):
         
         tk.Tk.__init__(self)
         self.geometry("1024x720")
+        self.configure(bg='#DCDCDC')
         self.width=width
         self.height=height
         self.graph=graph
@@ -106,16 +117,16 @@ class Affichage(tk.Tk):
 
 
         self.text=tk.StringVar()
-        self.text.set("coucou")
 
 
-        self.label=tk.Label(self,textvariable=self.text)
+
+        self.label=tk.Label(self,textvariable=self.text,bg='#DCDCDC')
         self.label.pack()
 
     def create_widget(self):
         
         """Création du canvas"""
-        self.canvas=tk.Canvas(self,width=self.width,height=self.height,bg='#DCDCDC')
+        self.canvas=tk.Canvas(self,width=self.width,height=self.height)
         
         for i in range(len(self.graph.liste_lieux)) :
             x0=self.graph.liste_lieux[i].x
@@ -127,13 +138,20 @@ class Affichage(tk.Tk):
 
     def create_route(self):
         """Affichage des differentes routes possibles"""
-        liste_coord=[]
+        
+        i=0
         for route in self.routes:
+            liste_coord=[]
             for index in route.ordre:
                 liste_coord.append(self.graph.liste_lieux[index].x)
                 liste_coord.append(self.graph.liste_lieux[index].y)
+            if i==0:
+                self.canvas.create_line(liste_coord,fill = "red")
+            else :
+                self.canvas.create_line(liste_coord,dash = (5, 2))
+            i=i+1
 
-            self.canvas.create_line(liste_coord,dash = (5, 2))
+        
 
 
 
@@ -143,7 +161,7 @@ class Affichage(tk.Tk):
         """ Fonction a implementer lorsque l'on aura les valeur itératives"""
         print('coucou')
 
-        self.text.set("Ca fonctionne")
+        self.text.set(f"Nous avons obtenue une distance de {self.routes[0].distance} en {len(self.routes)} itérations.")
         self.create_route()
 
     
@@ -156,5 +174,8 @@ class Affichage(tk.Tk):
 
 
 
-app=Affichage(400,400,Graph(400,400,10),[Route([0,1,2,3,4,5,6,7,8,9,0])])
+
+graph=Graph(600,600,10)
+
+app=Affichage(600,600,graph,[Route([0,1,2,3,4,5,6,7,8,9,0],graph.matricedesdistances),Route([0,1,3,2,4,5,7,6,8,9,0],graph.matricedesdistances)])
 app.mainloop()
