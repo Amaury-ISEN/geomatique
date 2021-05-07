@@ -9,7 +9,7 @@ class Lieu ():
     
     def calcul_distance(self, point):
         """Calcul de la distance entre le point self et une autre instance de Lieu appelée point."""
-        distance = sqrt((self.x-self.y)**2 +(point.x-point.y)**2)
+        distance = sqrt((self.x-point.x)**2 +(self.y-point.y)**2)
         return distance
 
 
