@@ -36,8 +36,7 @@ class Route ():
 
 class Affichage(tk.Tk):
 
-
-
+    """Instanciation de la classe d'affichage"""
     def __init__(self,width, height,graph,routes):
         
         tk.Tk.__init__(self)
@@ -61,7 +60,7 @@ class Affichage(tk.Tk):
 
     def create_widget(self):
         
-        
+    """Création du canvas """
         self.canvas=tk.Canvas(self,width=self.width,height=self.height,bg='#DCDCDC')
         
         for i in range(len(graph.liste_lieux)) :
@@ -73,6 +72,7 @@ class Affichage(tk.Tk):
         self.canvas.pack()
 
     def create_route(self):
+    """Affichage des differentes routes possibles"""
         liste_coord=[]
         for route in self.routes:
             for lieu in route:
@@ -85,6 +85,8 @@ class Affichage(tk.Tk):
 
 
     def on_key_press(self,event):
+
+        """ Fonction a implementer lorsque l'on aura les valeur itératives"""
         print('coucou')
 
         self.text.set("Ca fonctionne")
@@ -92,5 +94,7 @@ class Affichage(tk.Tk):
 
     
     def close(self,event):
+
+        """Fonction qui quitte le programme lorsque l'on appuie sur la touche échap"""
         self.withdraw() # if you want to bring it back
         sys.exit() # if you want to exit the entire thing
