@@ -1,4 +1,7 @@
 from math import sqrt
+import tkinter as tk
+import sys
+
 
 class Lieu ():
     # Classe de création de lieux entendus comme des points de coordonnées x et y
@@ -29,3 +32,69 @@ class Route ():
             distances.append(point1.calcul_distance(point2)) 
         distance_route = sum(distances) # somme de toutes les distances pour avoir le total
         return distance_route
+
+
+class Affichage(tk.Tk):
+
+    """Instanciation de la classe d'affichage"""
+    def __init__(self,width, height,graph,routes):
+        
+        tk.Tk.__init__(self)
+        self.geometry("1024x720")
+        self.width=width
+        self.height=height
+        self.graph=graph
+        self.routes=routes
+
+        self.create_widget()
+        self.bind("<KeyPress-n>", self.on_key_press)
+        self.bind('<Escape>', self.close)
+
+
+        self.text=tk.StringVar()
+        self.text.set("coucou")
+
+
+        self.label=tk.Label(self,textvariable=self.text)
+        self.label.pack()
+
+    def create_widget(self):
+        
+    """Création du canvas """
+        self.canvas=tk.Canvas(self,width=self.width,height=self.height,bg='#DCDCDC')
+        
+        for i in range(len(graph.liste_lieux)) :
+            x0=lieu[i].x
+            y0=lieu[i].y
+            self.canvas.create_oval(x0,y0,x0+10,y0+10)
+            self.canvas.create_text(x0,y0,text=str(i))
+        
+        self.canvas.pack()
+
+    def create_route(self):
+    """Affichage des differentes routes possibles"""
+        liste_coord=[]
+        for route in self.routes:
+            for lieu in route:
+                liste_coord.append(lieu.x)
+                liste_coord.append(lieu.y)
+
+            self.canvas.create_line(liste_coord,dash = (5, 2))
+
+
+
+
+    def on_key_press(self,event):
+
+        """ Fonction a implementer lorsque l'on aura les valeur itératives"""
+        print('coucou')
+
+        self.text.set("Ca fonctionne")
+        self.create_route()
+
+    
+    def close(self,event):
+
+        """Fonction qui quitte le programme lorsque l'on appuie sur la touche échap"""
+        self.withdraw() # if you want to bring it back
+        sys.exit() # if you want to exit the entire thing
