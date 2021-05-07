@@ -146,7 +146,7 @@ class Affichage(tk.Tk):
                 liste_coord.append(self.graph.liste_lieux[index].x)
                 liste_coord.append(self.graph.liste_lieux[index].y)
             if i==0:
-                self.canvas.create_line(liste_coord,fill = "red")
+                self.canvas.create_line(liste_coord,fill = "blue")
             else :
                 self.canvas.create_line(liste_coord,dash = (5, 2))
             i=i+1
