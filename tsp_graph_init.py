@@ -53,6 +53,7 @@ class Route ():
 
 class Graph ():
 
+    
 
     def __init__(self, largeur, hauteur, nombre) :
         self.largeur= largeur
@@ -68,10 +69,14 @@ class Graph ():
 
     #création aléatoire des  liste de lieux
     def listelieux(self ) : 
+
+        
         for i in range(self.nombre):
             x = random.randint(0,self.largeur)
             y = random.randint(0,self.hauteur)
+            
             lieu = Lieu(x,y)
+
             self.liste_lieux.append(lieu)
 
 
@@ -87,14 +92,40 @@ class Graph ():
                 d=self.liste_lieux[i].calcul_distance(self.liste_lieux[e])
                 listedesdistances.append(d)
             self.matricedesdistances.append(listedesdistances)
+        #transformer les listes en tableau panda   
         self.matricedesdistances = pd.DataFrame(self.matricedesdistances)
+        self.plus_proche_voisin()
+
+    
 
 
 
 
 
     #Le graph disposera également d'une fonction nommée plus_proche_voisin permettant de renvoyer le plus proche voisin d'un lieu en utilisant la matrice de distance
-    #def plus_proche_voisin(self):
+    def plus_proche_voisin(self):
+        self.matricedesdistances["indexmin"]=self.matricedesdistances[self.matricedesdistances>0].idxmin(axis=1)
+
+    #sauvergarder le fichier
+    def save(self):
+        listex = []
+        listey = []
+        for lieu in self.liste_lieux:
+            listex.append(lieu.x)
+            listey.append(lieu.y)
+        pd.DataFrame([listex, lixtey]).to_csv("graph.csv")
+        
+    #charger le csv
+    def load(self, path):
+        data = pd.read_csv(path)
+        x=data.loc[:,0]
+        y=data.loc[:,-1]
+        nouveauxpoints = []
+        for x0, y0 in zip(x,y):
+            nouveauxpoints.append(Lieu(x0, y0))
+        self.liste_lieux = nouveauxpoints
+        #mettre à jour la matrice coût od
+        self.calcul_matrice_cout_od()
 
 
 
