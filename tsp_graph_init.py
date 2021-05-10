@@ -234,6 +234,16 @@ class Affichage(tk.Tk):
 
 
 
+class TSP_SA():
+
+    def __init__(self,ordre):
+        self.ordre=ordre
+
+    def do_permutation(self):
+        a=random.randrange(1,len(self.ordre)-1)
+        b=random.randrange(a,len(self.ordre))
+        self.ordre[a:b]=list(reversed(self.ordre[a:b]))
+
 
 class BruteForce():
         
