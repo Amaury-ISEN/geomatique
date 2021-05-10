@@ -254,4 +254,8 @@ NB_LIEU=5
 SIZE=800
 graph=Graph(SIZE,SIZE,NB_LIEU)
 app=Affichage(SIZE,SIZE,graph,NB_LIEU)
+<<<<<<< HEAD
 app.mainloop()
+=======
+app.mainloop()
+>>>>>>> 337ae1b5e01bd955c09647e8781b9914d6210f1a
