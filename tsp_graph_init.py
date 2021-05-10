@@ -3,7 +3,8 @@ import tkinter as tk
 import sys
 import random
 import pandas as pd
-
+from itertools import permutations
+import time
 
 
 
@@ -71,7 +72,7 @@ class Graph ():
     def listelieux(self ) : 
 
         
-        for i in range(self.nombre):
+        for i in range(self.nombre+1):
             x = random.randint(0,self.largeur)
             y = random.randint(0,self.hauteur)
             
@@ -113,7 +114,7 @@ class Graph ():
         for lieu in self.liste_lieux:
             listex.append(lieu.x)
             listey.append(lieu.y)
-        pd.DataFrame([listex, lixtey]).to_csv("graph.csv")
+        pd.DataFrame([listex, listey]).to_csv("graph.csv")
         
     #charger le csv
     def load(self, path):
@@ -132,7 +133,7 @@ class Graph ():
 class Affichage(tk.Tk):
 
     """Instanciation de la classe d'affichage"""
-    def __init__(self,width, height,graph,routes):
+    def __init__(self,width, height,graph):
         
         tk.Tk.__init__(self)
         self.geometry("1024x720")
@@ -140,13 +141,10 @@ class Affichage(tk.Tk):
         self.width=width
         self.height=height
         self.graph=graph
-        self.routes=routes
-
+        self.routes=0
         self.create_widget()
         self.bind("<KeyPress-n>", self.on_key_press)
         self.bind('<Escape>', self.close)
-
-
         self.text=tk.StringVar()
 
 
@@ -170,30 +168,53 @@ class Affichage(tk.Tk):
     def create_route(self):
         """Affichage des differentes routes possibles"""
         
-        i=0
-        for route in self.routes:
+        liste=[]
+
+
+        for i in range(8):
+            liste.append(i)
+        print(liste)
+        i =0
+        for itineraire in (BruteForce().creer_itineraires(liste)):
+            itineraire=list(itineraire)
+            print(itineraire)
+            self.routes=i
+            route=Route(itineraire,graph.matricedesdistances)
+
+            if i==0:
+                meilleure_route=route
+            elif route.distance<meilleure_route.distance:
+                meilleure_route=route
+
             liste_coord=[]
+
+            nb=0
             for index in route.ordre:
                 liste_coord.append(self.graph.liste_lieux[index].x)
                 liste_coord.append(self.graph.liste_lieux[index].y)
-            if i==0:
+                
+                if route==meilleure_route:
+                    self.canvas.create_text(self.graph.liste_lieux[index].x,self.graph.liste_lieux[index].y-15,text=str(nb))
+                    nb+=1
+
+            if route==meilleure_route:
                 self.canvas.create_line(liste_coord,fill = "blue")
+                
             else :
                 self.canvas.create_line(liste_coord,dash = (5, 2))
-            i=i+1
-
-        
-
-
+                #self.canvas.delete(line)
+            self.text.set(f"Nous avons obtenue une distance de {meilleure_route.distance} en {self.routes} itérations.")
+            i+=1
 
 
+
+    
     def on_key_press(self,event):
 
         """ Fonction a implementer lorsque l'on aura les valeur itératives"""
         print('coucou')
-
-        self.text.set(f"Nous avons obtenue une distance de {self.routes[0].distance} en {len(self.routes)} itérations.")
         self.create_route()
+        
 
     
     def close(self,event):
@@ -205,8 +226,20 @@ class Affichage(tk.Tk):
 
 
 
+class BruteForce():
+        
+    def creer_itineraires(self, liste_lieux):
+        liste_lieux= liste_lieux.copy()
+        depart = liste_lieux.pop(0)
+        
+        for itineraire in permutations(liste_lieux):
+            itineraire = list(itineraire)
+            itineraire.append(0)
+            itineraire.insert(0,0)
 
-graph=Graph(600,600,10)
+            yield itineraire
 
-app=Affichage(600,600,graph,[Route([0,1,2,3,4,5,6,7,8,9,0],graph.matricedesdistances),Route([0,1,3,2,4,5,7,6,8,9,0],graph.matricedesdistances)])
+
+graph=Graph(600,600,7)
+app=Affichage(600,600,graph)
 app.mainloop()
