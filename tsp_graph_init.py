@@ -3,6 +3,7 @@ import tkinter as tk
 import sys
 import random
 import pandas as pd
+import numpy as np 
 from itertools import permutations
 import time
 
@@ -74,13 +75,9 @@ class Graph ():
         
         for i in range(self.nombre+1):
             x = random.randint(0,self.largeur)
-            y = random.randint(0,self.hauteur)
-            
+            y = random.randint(0,self.hauteur)      
             lieu = Lieu(x,y)
-
             self.liste_lieux.append(lieu)
-
-
             print(x,y)
 
 
@@ -98,11 +95,6 @@ class Graph ():
         self.plus_proche_voisin()
 
     
-
-
-
-
-
     #Le graph disposera également d'une fonction nommée plus_proche_voisin permettant de renvoyer le plus proche voisin d'un lieu en utilisant la matrice de distance
     def plus_proche_voisin(self):
         self.matricedesdistances["indexmin"]=self.matricedesdistances[self.matricedesdistances>0].idxmin(axis=1)
@@ -217,12 +209,55 @@ class Affichage(tk.Tk):
             nb+=1
         self.update()
 
+    def afficher_recuit(self):
+        """fonction pour afficher le recuit"""
+        tsp=TSP_SA(2000,100000,self.graph.matricedesdistances,self.nb_lieu)
+        i=0
+        for tour,temperature,route_2,best_route in tsp.recuit():
+
+            liste_coord=[]
+            if i==0:
+                for index in route_2.ordre:
+                    liste_coord.append(self.graph.liste_lieux[index].x)
+                    liste_coord.append(self.graph.liste_lieux[index].y)
+                blue_line=self.canvas.create_line(liste_coord,fill = "blue")
+
+            meilleure_route=best_route
+            
+            liste_coord=[]
+            for index in route_2.ordre:
+                liste_coord.append(self.graph.liste_lieux[index].x)
+                liste_coord.append(self.graph.liste_lieux[index].y)
+                
+         
+            if route_2==best_route and i!=0:
+                self.canvas.delete(blue_line)
+                blue_line=self.canvas.create_line(liste_coord,fill = "blue")
+         
+
+            else :
+                line = self.canvas.create_line(liste_coord,dash = (5, 2))
+                self.canvas.after(1,self.canvas.delete,line)
+    
+
+            self.text.set(f" distance: {meilleure_route.distance} en {tour} itérations. temp:{temperature}")
+            self.update()
+            i+=1
+        
+            nb=0
+        for index in meilleure_route.ordre:
+            self.canvas.create_text(self.graph.liste_lieux[index].x,self.graph.liste_lieux[index].y-15,text=str(nb))
+            nb+=1
+        self.update()
+
+
     
     def on_key_press(self,event):
 
         """ Fonction a implementer lorsque l'on aura les valeur itératives"""
         print('coucou')
-        self.create_route()
+        #self.create_route()
+        self.afficher_recuit()
         
 
     
@@ -236,15 +271,94 @@ class Affichage(tk.Tk):
 
 class TSP_SA():
 
-    def __init__(self,ordre):
-        self.ordre=ordre
+    
+    def __init__ (self, temperature, nb_iterations,matrice,nb_lieu):
+        self.matrice = matrice
+        self.temperature = temperature
+        self.nb_iterations = nb_iterations
+        self.nb_lieu=nb_lieu
+        self.ordre=self.init_ordre()
 
-    def do_permutation(self):
-        a=random.randrange(1,len(self.ordre)-1)
-        b=random.randrange(a,len(self.ordre))
-        self.ordre[a:b]=list(reversed(self.ordre[a:b]))
 
+        
+        # Création d'une route aléatoire en attendant mieux avec le PPV :
+        self.best_route = Route(self.init_ordre(),self.matrice)
+        self.route_1 = Route(self.chemin_plus_proche_voisins(),self.matrice)
+        self.route_2 = Route(self.init_ordre(),self.matrice)
+        self.tour = 0
+        self.delta = 0
+        self.proba_acceptation = None
 
+    def chemin_plus_proche_voisins(self):
+        ordre=[0]
+        dataframe=self.matrice.copy()
+        dataframe.drop(0, axis=1, inplace=True)
+        for i in range(len(dataframe.columns)-2):
+            liste_drop=['indexmin']
+            route =(dataframe["indexmin"][ordre[-1]])
+            ordre.append(int(route))
+            liste_drop.append(int(ordre[-1]))
+            dataframe.drop(liste_drop, axis=1, inplace=True)
+            dataframe["indexmin"]=dataframe[dataframe>0].idxmin(axis=1)
+
+        ordre.append(int(dataframe["indexmin"][ordre[-1]]))
+        ordre.append(0)
+        print(ordre)
+        return ordre
+
+    
+    def recuit(self):
+        initial_temperature=self.temperature
+        listetemp=[]
+        for i in range(self.nb_iterations):
+
+            self.permutation()
+
+            # Première permutation :
+        
+    
+            # Calcul du delta de la fonction coût (ici distance totale) entre la route précédente et la nouvelle :
+            self.delta = self.route_2.distance-self.route_1.distance
+            
+            if self.delta < 0:
+                # On a un delta négatif, on conserve donc cette nouvelle route meilleure que la précédente.
+                self.route_1 = self.route_2
+                if self.route_2.distance < self.best_route.distance:
+                    # Cette nouvelle route est meilleure que la meilleure jusqu'ici, on écrase cette dernière avec :
+                    self.best_route = self.route_2
+
+                    
+            if self.delta > 0:
+                # On a un delta positif, on va conserver ou non cette nouvelle route selon la proba d'acceptation
+                self.proba_acceptation = np.exp(-self.delta/self.temperature)
+                
+                if random.random() < self.proba_acceptation :
+                    # Le test de probabilité a été passé, on conserve la nouvelle route malgré tout
+                    self.route_1 = self.route_2
+                    print("accepted")
+                
+            self.tour += 1
+
+            self.temperature = initial_temperature/(np.log(self.tour + 1))
+            listetemp.append(self.temperature)
+            yield self.tour,self.temperature,self.route_2,self.best_route
+        
+        print(listetemp)
+    def permutation(self):
+
+        ordre=self.route_2.ordre
+        a=random.randrange(1,len(ordre)-2)
+        b=random.randrange(a+2,len(ordre))
+        ordre[a:b]=list(reversed(ordre[a:b]))
+        self.route_2=Route(ordre,self.matrice)
+
+    def init_ordre(self):
+        ordre=[]
+        for i in range(self.nb_lieu+1):
+            ordre.append(i)
+        ordre.append(0)
+        return ordre
+        
 class BruteForce():
         
     def creer_itineraires(self, liste_lieux):
@@ -260,7 +374,7 @@ class BruteForce():
 
 
 
-NB_LIEU=5
+NB_LIEU=20
 SIZE=800
 graph=Graph(SIZE,SIZE,NB_LIEU)
 app=Affichage(SIZE,SIZE,graph,NB_LIEU)
