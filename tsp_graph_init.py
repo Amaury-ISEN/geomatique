@@ -7,7 +7,7 @@ import numpy as np
 from itertools import permutations
 import time
 
-
+random.seed(42)
 
 class Lieu ():
     # Classe de création de lieux entendus comme des points de coordonnées x et y
@@ -145,6 +145,7 @@ class Affichage(tk.Tk):
         self.label=tk.Label(self,textvariable=self.text,bg='#DCDCDC')
         self.label.pack()
 
+
     def create_widget(self):
         
         """Création du canvas"""
@@ -211,9 +212,9 @@ class Affichage(tk.Tk):
 
     def afficher_recuit(self):
         """fonction pour afficher le recuit"""
-        tsp=TSP_SA(2000,100000,self.graph.matricedesdistances,self.nb_lieu)
+        tsp=TSP_SA(1400,10000,self.graph.matricedesdistances,self.nb_lieu)
         i=0
-        for tour,temperature,route_2,best_route in tsp.recuit():
+        for tour,temperature,route_2,best_route,nb in tsp.recuit():
 
             liste_coord=[]
             if i==0:
@@ -240,7 +241,7 @@ class Affichage(tk.Tk):
                 self.canvas.after(1,self.canvas.delete,line)
     
 
-            self.text.set(f" distance: {meilleure_route.distance} en {tour} itérations. temp:{temperature}")
+            self.text.set(f" distance: {meilleure_route.distance} en {nb}/{tour} itérations. temp:{int(temperature)}")
             self.update()
             i+=1
         
@@ -310,11 +311,11 @@ class TSP_SA():
     def recuit(self):
         initial_temperature=self.temperature
         listetemp=[]
+        nb_best_route=0
         for i in range(self.nb_iterations):
 
             self.permutation()
 
-            # Première permutation :
         
     
             # Calcul du delta de la fonction coût (ici distance totale) entre la route précédente et la nouvelle :
@@ -326,6 +327,7 @@ class TSP_SA():
                 if self.route_2.distance < self.best_route.distance:
                     # Cette nouvelle route est meilleure que la meilleure jusqu'ici, on écrase cette dernière avec :
                     self.best_route = self.route_2
+                    nb_best_route=i
 
                     
             if self.delta > 0:
@@ -339,16 +341,18 @@ class TSP_SA():
                 
             self.tour += 1
 
-            self.temperature = initial_temperature/(np.log(self.tour + 1))
+            self.temperature = self.temperature * 0.999
             listetemp.append(self.temperature)
-            yield self.tour,self.temperature,self.route_2,self.best_route
+            yield self.tour,self.temperature,self.route_2,self.best_route,nb_best_route
         
         print(listetemp)
+
+
     def permutation(self):
 
         ordre=self.route_2.ordre
-        a=random.randrange(1,len(ordre)-2)
-        b=random.randrange(a+2,len(ordre))
+        a=random.randrange(1,len(ordre)-3)
+        b=a+3
         ordre[a:b]=list(reversed(ordre[a:b]))
         self.route_2=Route(ordre,self.matrice)
 
@@ -374,8 +378,8 @@ class BruteForce():
 
 
 
-NB_LIEU=20
-SIZE=800
+NB_LIEU=200
+SIZE=1000
 graph=Graph(SIZE,SIZE,NB_LIEU)
 app=Affichage(SIZE,SIZE,graph,NB_LIEU)
 app.mainloop()
