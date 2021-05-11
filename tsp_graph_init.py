@@ -218,7 +218,7 @@ class Affichage(tk.Tk):
 
             liste_coord=[]
             if i==0:
-                for index in route_2.ordre:
+                for index in best_route.ordre:
                     liste_coord.append(self.graph.liste_lieux[index].x)
                     liste_coord.append(self.graph.liste_lieux[index].y)
                 blue_line=self.canvas.create_line(liste_coord,fill = "blue")
@@ -283,9 +283,9 @@ class TSP_SA():
 
         
         # Création d'une route aléatoire en attendant mieux avec le PPV :
-        self.best_route = Route(self.init_ordre(),self.matrice)
+        self.best_route = Route(self.chemin_plus_proche_voisins(),self.matrice)
         self.route_1 = Route(self.chemin_plus_proche_voisins(),self.matrice)
-        self.route_2 = Route(self.init_ordre(),self.matrice)
+        self.route_2 = Route(self.chemin_plus_proche_voisins(),self.matrice)
         self.tour = 0
         self.delta = 0
         self.proba_acceptation = None
@@ -378,7 +378,7 @@ class BruteForce():
 
 
 
-NB_LIEU=200
+NB_LIEU=50
 SIZE=1000
 graph=Graph(SIZE,SIZE,NB_LIEU)
 app=Affichage(SIZE,SIZE,graph,NB_LIEU)
