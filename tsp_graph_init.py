@@ -39,11 +39,14 @@ class Route ():
             raise ValueError ("Le lieu d'index zéro doit être présent en première et en dernière position dans l'ordre.")
         elif ordre[-1] != 0:
             raise ValueError ("Le lieu d'index zéro doit être présent en première et en dernière position dans l'ordre.")
+        # Si la liste n'a pas la même longueur qu'une liste recrée via son max, alors il manque un indice :
+        elif len(ordre[1:-1]) != len([i for i in range(1,max(ordre[1:-1])+1)]):
+            raise ValueError ("Il manque une valeur de la liste dans ordre.")
         else :
             set_ordre = set(ordre[1:-1]) # On compare la liste débarassée des zéro à son équivalent en set
             if len(set_ordre) != len(ordre[1:-1]): # Si le set est plus petit, ça veut dire qu'il y a des doublons dans la liste
                 raise ValueError ("La liste ordre ne doit pas présenter d'indices en double à part le départ et l'arrivée à 0.")
-        
+                        
     def calcul_distance_route(self, matrice):
         """Chercher les distances dans la matrice origine-destination"""
         distances = [] # toutes nos distances pour la route
