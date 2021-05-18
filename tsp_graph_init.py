@@ -6,6 +6,8 @@ import pandas as pd
 import numpy as np 
 from itertools import permutations
 import time
+from pyproj import Proj, transform
+from sklearn.preprocessing import Normalizer
 
 random.seed(42)
 
@@ -46,7 +48,7 @@ class Route ():
             set_ordre = set(ordre[1:-1]) # On compare la liste débarassée des zéro à son équivalent en set
             if len(set_ordre) != len(ordre[1:-1]): # Si le set est plus petit, ça veut dire qu'il y a des doublons dans la liste
                 raise ValueError ("La liste ordre ne doit pas présenter d'indices en double à part le départ et l'arrivée à 0.")
-                        
+
     def calcul_distance_route(self, matrice):
         """Chercher les distances dans la matrice origine-destination"""
         distances = [] # toutes nos distances pour la route
@@ -58,30 +60,90 @@ class Route ():
 
 class Graph ():
 
-    
-
-    def __init__(self, largeur, hauteur, nombre) :
+    def __init__(self, largeur, hauteur, nombre, **kwargs) :
         self.largeur= largeur
         self.hauteur = hauteur
         self.nombre = nombre
         self.liste_lieux = []
-        #on appelle la fonction qui génère une liste d elieux, et permet de remplir la liste
-        self.listelieux()
+
+        # Si un chemin vers un csv pour les points est renseigné lors de l'instanciation du graphe :
+        if "path_points" in kwargs :
+            self.path_points = kwargs["path_points"]
+            self.load_points()
+
+            # Si un chemin vers un csv pour ma matrice OD est renseigné lors de l'instanciation du graphe :
+            if "path_matrice" in kwargs :
+                self.path_matrice = kwargs["path_matrice"]
+                self.load_matrice()
+
+            # Si pas de chemin vers matrice, on la calcule :
+            else :
+                self.matricedesdistances= []
+                self.calcul_matrice_cout_od()
+
+        else : # Si pas de points ni de matrice en csv, les générer ici :
+            #on appelle la fonction qui génère une liste d elieux, et permet de remplir la liste
+            self.liste_lieux_rand()
+            self.matricedesdistances= []    
+            self.calcul_matrice_cout_od()
+
+    def load_points(self):
+        """Charge les points de coordonnées GPS depuis le chemin csv renseigné lors de la construction du graphe."""
+        df_points = pd.read_csv(self.path_points, sep=",")
+
+
+        # enlever min et / par max
+        df_points["latitude"] = (df_points["latitude"]-df_points["latitude"].min())/self.hauteur
+        df_points["longitude"] = (df_points["longitude"]-df_points["longitude"].min())/self.largeur
+        print("scaled points", df_points[["latitude", "longitude"]])
+        # print("self.hauteur", self.hauteur)
+        # print("self.largeur", self.largeur)
+
+        # df_points["latitude"] *= 10
+        # df_points["longitude"] *= 10
+
+        
+        # normalizer = Normalizer()
+        # df_points[["latitude"]] = normalizer.fit_transform(df_points[["latitude"]])
+        # df_points[["longitude"]] = normalizer.fit_transform(df_points[["longitude"]])
+
+
+        print("scaled points", df_points[["latitude", "longitude"]])
+        for i in range(len(df_points)-1):
+            x = df_points["latitude"][i]
+            y = df_points["longitude"][i]
+            lieu = Lieu(x,y)
+            self.liste_lieux.append(lieu)
+
+        # print(x,y)
+
+    def load_matrice(self):
+        """Charge une matrice OD à l'aide du chemin vers le csv renseigné lors de la construction du graphe."""
         self.matricedesdistances= []
         self.calcul_matrice_cout_od()
-    
+
+        for i in range (len(self.liste_lieux)):
+            listedesdistances=[]          
+            for e in range (len(self.liste_lieux)):
+                d=self.liste_lieux[i].calcul_distance(self.liste_lieux[e])
+                listedesdistances.append(d)
+            self.matricedesdistances.append(listedesdistances)
+        #transformer les listes en tableau panda   
+        self.matricedesdistances = pd.DataFrame(self.matricedesdistances)
 
 
     #création aléatoire des  liste de lieux
-    def listelieux(self ) : 
+    def liste_lieux_rand(self):
 
-        
         for i in range(self.nombre+1):
             x = random.randint(0,self.largeur)
             y = random.randint(0,self.hauteur)      
             lieu = Lieu(x,y)
             self.liste_lieux.append(lieu)
             print(x,y)
+
+    # def liste_lieux_reels(self, path) :
+
 
 
 
@@ -383,6 +445,12 @@ class BruteForce():
 
 NB_LIEU=50
 SIZE=1000
-graph=Graph(SIZE,SIZE,NB_LIEU)
-app=Affichage(SIZE,SIZE,graph,NB_LIEU)
+# graph=Graph(SIZE,SIZE,NB_LIEU)
+graph=Graph(SIZE,SIZE,nombre = 16,
+            path_points="liste_points_gps.csv",
+            path_matrice="matrice_od.csv")
+
+# app=Affichage(SIZE,SIZE,graph,NB_LIEU)
+app=Affichage(SIZE,SIZE,graph, graph.nombre)
+
 app.mainloop()
