@@ -94,8 +94,8 @@ class Graph ():
         # print("self.hauteur", self.hauteur)
         # print("self.largeur", self.largeur)
 
-        # df_points["latitude"] *= 10
-        # df_points["longitude"] *= 10
+        df_points["latitude"] *= 15
+        df_points["longitude"] *= 15
 
         
         # normalizer = Normalizer()
@@ -104,7 +104,7 @@ class Graph ():
 
 
         print("scaled points", df_points[["latitude", "longitude"]])
-        for i in range(len(df_points)-1):
+        for i in range(len(df_points)):
             x = df_points["latitude"][i]
             y = df_points["longitude"][i]
             lieu = Lieu(x,y)
@@ -114,7 +114,32 @@ class Graph ():
 
     def load_matrice(self):
         """Charge une matrice OD à l'aide du chemin vers le csv renseigné lors de la construction du graphe."""
-        data=pd.read_csv('')
+        data=pd.read_csv(self.path_matrice,sep=';')
+        data.drop(0,inplace=True)
+        data.drop('from_cat',axis=1,inplace=True)
+        data=data.fillna(0)
+        liste_index=[]
+
+        for element in data.columns.to_list():
+            try:
+                liste_index.append(int(element)-1)
+            except:
+                liste_index.append(element)
+        data.columns=liste_index
+
+        liste_index=[]
+
+        for element in data.index.to_list():
+            try:
+                liste_index.append(int(element)-1)
+            except:
+                liste_index.append(element)
+        data.index=liste_index
+        self.matricedesdistances=data
+        print(data)
+
+        self.plus_proche_voisin()
+
 
     #création aléatoire des  liste de lieux
     def liste_lieux_rand(self):
@@ -392,7 +417,7 @@ class TSP_SA():
                 
             self.tour += 1
 
-            self.temperature = self.temperature * 0.999
+            self.temperature = self.temperature * 0.9999
             listetemp.append(self.temperature)
             yield self.tour,self.temperature,self.route_2,self.best_route,nb_best_route
         
@@ -433,9 +458,9 @@ NB_LIEU=50
 SIZE=1000
 # graph=Graph(SIZE,SIZE,NB_LIEU)
 graph=Graph(SIZE,SIZE,nombre = 16,
-            path_points="liste_points_gps.csv",
-            path_matrice="matrice_od.csv")
-
+            path_points="data.csv",
+            path_matrice="data_temps.csv")
+graph=Graph(SIZE,SIZE,nombre=NB_LIEU)
 # app=Affichage(SIZE,SIZE,graph,NB_LIEU)
 app=Affichage(SIZE,SIZE,graph, graph.nombre)
 
