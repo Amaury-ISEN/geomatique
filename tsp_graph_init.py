@@ -433,12 +433,12 @@ class TSP_SA():
         ordre=self.route_2.ordre
 
         if self.temperature/self.init_temperature>0.5:
-            depart=len(ordre)//2
+            depart=(len(ordre)//2)-1
         else:
             depart=1
 
-        a=random.randrange(depart,len(ordre)-4)
-        b=random.randrange(a+3,len(ordre))
+        a=random.randrange(depart,len(ordre)-3)
+        b=random.randrange(a+1,len(ordre))
         ordre[a:b]=list(reversed(ordre[a:b]))
         self.route_2=Route(ordre,self.matrice)
 
@@ -466,9 +466,9 @@ class BruteForce():
 
 NB_LIEU=50
 SIZE=1000
-# graph=Graph(SIZE,SIZE,NB_LIEU)
+graph=Graph(800,600,NB_LIEU)
 #graph=Graph(SIZE,SIZE,nombre = 16,path_points="data.csv",path_matrice="data_temps.csv")
-graph=Graph(800,600,nombre=NB_LIEU,path_points='graph_5.csv')
+#graph=Graph(800,600,nombre=NB_LIEU,path_points='graph_10.csv')
 # app=Affichage(SIZE,SIZE,graph,NB_LIEU)
 app=Affichage(800,600,graph, graph.nombre)
 
