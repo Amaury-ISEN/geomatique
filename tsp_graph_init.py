@@ -433,7 +433,7 @@ class TSP_SA():
         ordre=self.route_2.ordre
 
         if self.temperature/self.init_temperature>0.5:
-            depart=len(ordre)/2
+            depart=len(ordre)//2
         else:
             depart=1
 
