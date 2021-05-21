@@ -7,7 +7,9 @@ import numpy as np
 from itertools import permutations
 import time
 
-random.seed()
+random.seed(1)
+np.random.seed(1)
+
 
 class Lieu ():
     # Classe de création de lieux entendus comme des points de coordonnées x et y
@@ -60,11 +62,12 @@ class Graph ():
         self.hauteur = hauteur
         self.nombre = nombre
         self.liste_lieux = []
+        self.matricedesdistances= []    
 
         # Si un chemin vers un csv pour les points est renseigné lors de l'instanciation du graphe :
         if "path_points" in kwargs :
             self.path_points = kwargs["path_points"]
-            self.load_points()
+            self.charger_graph(self.path_points)
 
             # Si un chemin vers un csv pour ma matrice OD est renseigné lors de l'instanciation du graphe :
             if "path_matrice" in kwargs :
@@ -79,7 +82,7 @@ class Graph ():
         else : # Si pas de points ni de matrice en csv, les générer ici :
             #on appelle la fonction qui génère une liste d elieux, et permet de remplir la liste
             self.liste_lieux_rand()
-            self.matricedesdistances= []    
+            
             self.calcul_matrice_cout_od()
 
     def load_points(self):
@@ -185,8 +188,8 @@ class Graph ():
     #charger le csv
     def charger_graph(self, path):
         data = pd.read_csv(path)
-        x=data.loc[:,0]
-        y=data.loc[:,-1]
+        x=data["x"]
+        y=data['y']
         nouveauxpoints = []
         for x0, y0 in zip(x,y):
             nouveauxpoints.append(Lieu(x0, y0))
@@ -288,7 +291,7 @@ class Affichage(tk.Tk):
 
     def afficher_recuit(self):
         """fonction pour afficher le recuit"""
-        tsp=TSP_SA(1400,10000,self.graph.matricedesdistances,self.nb_lieu)
+        tsp=TSP_SA(1300,30000,self.graph.matricedesdistances,self.nb_lieu)
         i=0
         for tour,temperature,route_2,best_route,nb in tsp.recuit():
 
@@ -352,6 +355,7 @@ class TSP_SA():
     def __init__ (self, temperature, nb_iterations,matrice,nb_lieu):
         self.matrice = matrice
         self.temperature = temperature
+        self.init_temperature=temperature
         self.nb_iterations = nb_iterations
         self.nb_lieu=nb_lieu
         self.ordre=self.init_ordre()
@@ -385,50 +389,56 @@ class TSP_SA():
 
     
     def recuit(self):
-        initial_temperature=self.temperature
+        
         listetemp=[]
         nb_best_route=0
         for i in range(self.nb_iterations):
+            if self.temperature>0:
 
-            self.permutation()
+                self.permutation()
 
-        
-    
-            # Calcul du delta de la fonction coût (ici distance totale) entre la route précédente et la nouvelle :
-            self.delta = self.route_2.distance-self.route_1.distance
             
-            if self.delta < 0:
-                # On a un delta négatif, on conserve donc cette nouvelle route meilleure que la précédente.
-                self.route_1 = self.route_2
-                if self.route_2.distance < self.best_route.distance:
-                    # Cette nouvelle route est meilleure que la meilleure jusqu'ici, on écrase cette dernière avec :
-                    self.best_route = self.route_2
-                    nb_best_route=i
-
-                    
-            if self.delta > 0:
-                # On a un delta positif, on va conserver ou non cette nouvelle route selon la proba d'acceptation
-                self.proba_acceptation = np.exp(-self.delta/self.temperature)
-                
-                if random.random() < self.proba_acceptation :
-                    # Le test de probabilité a été passé, on conserve la nouvelle route malgré tout
-                    self.route_1 = self.route_2
-                    print("accepted")
-                
-            self.tour += 1
-
-            self.temperature = self.temperature * 0.9999
-            listetemp.append(self.temperature)
-            yield self.tour,self.temperature,self.route_2,self.best_route,nb_best_route
         
-        print(listetemp)
+                # Calcul du delta de la fonction coût (ici distance totale) entre la route précédente et la nouvelle :
+                self.delta = self.route_2.distance-self.route_1.distance
+                
+                if self.delta < 0:
+                    # On a un delta négatif, on conserve donc cette nouvelle route meilleure que la précédente.
+                    self.route_1 = self.route_2
+                    if self.route_2.distance < self.best_route.distance:
+                        # Cette nouvelle route est meilleure que la meilleure jusqu'ici, on écrase cette dernière avec :
+                        self.best_route = self.route_2
+                        nb_best_route=i
+
+                        
+                if self.delta > 0:
+                    # On a un delta positif, on va conserver ou non cette nouvelle route selon la proba d'acceptation
+                    self.proba_acceptation = np.exp(-self.delta/self.temperature)
+                    
+                    if random.random() < self.proba_acceptation :
+                        # Le test de probabilité a été passé, on conserve la nouvelle route malgré tout
+                        self.route_1 = self.route_2
+                        print("accepted")
+                    
+                self.tour += 1
+
+                self.temperature = self.temperature * 0.9995
+                listetemp.append(self.temperature)
+                yield self.tour,self.temperature,self.route_2,self.best_route,nb_best_route
+            
 
 
     def permutation(self):
 
         ordre=self.route_2.ordre
-        a=random.randrange(1,len(ordre)-3)
-        b=random.randrange(a+2,len(ordre))
+
+        if self.temperature/self.init_temperature>0.5:
+            depart=len(ordre)/2
+        else:
+            depart=1
+
+        a=random.randrange(depart,len(ordre)-4)
+        b=random.randrange(a+3,len(ordre))
         ordre[a:b]=list(reversed(ordre[a:b]))
         self.route_2=Route(ordre,self.matrice)
 
@@ -457,11 +467,9 @@ class BruteForce():
 NB_LIEU=50
 SIZE=1000
 # graph=Graph(SIZE,SIZE,NB_LIEU)
-graph=Graph(SIZE,SIZE,nombre = 16,
-            path_points="data.csv",
-            path_matrice="data_temps.csv")
-graph=Graph(SIZE,SIZE,nombre=NB_LIEU)
+#graph=Graph(SIZE,SIZE,nombre = 16,path_points="data.csv",path_matrice="data_temps.csv")
+graph=Graph(800,600,nombre=NB_LIEU,path_points='graph_5.csv')
 # app=Affichage(SIZE,SIZE,graph,NB_LIEU)
-app=Affichage(SIZE,SIZE,graph, graph.nombre)
+app=Affichage(800,600,graph, graph.nombre)
 
 app.mainloop()
